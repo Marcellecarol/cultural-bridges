@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-main: #1A1108;
+  --bg-card: #2A1F10;
+  --accent-primary: #D4850A; /* Amber/Gold */
+  --accent-secondary: #4A9E8E; /* Teal */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A08060; /* Beige */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility Mode */
+body.a11y-mode {
+  --bg-main: #000000;
+  --bg-card: #1A1A1A;
+  --accent-primary: #FFCC00;
+  --text-secondary: #CCCCCC;
+  font-size: 115%;
+}
+body.a11y-mode * {
+  letter-spacing: 0.5px;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--bg-main);
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography Utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-accent-primary { color: var(--accent-primary); }
+.text-accent-secondary { color: var(--accent-secondary); }
+
+/* Layout Utilities */
+.page-container {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* Space for bottom nav */
+}
+
+/* UI Elements */
+.pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pill-amber { background-color: var(--accent-primary); color: #000; }
+.pill-teal { background-color: var(--accent-secondary); color: #000; }
+.pill-dark { background-color: rgba(255,255,255,0.1); color: var(--text-secondary); }
+
+.card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
