@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, PackageOpen } from 'lucide-react';
 import BottomNav from './components/BottomNav';
 import TopBar from './components/TopBar';
@@ -28,7 +29,15 @@ const BlindBox: React.FC<{ reward: Artifact, onClaim: () => void, language: stri
         </div>
       ) : (
         <div style={{ textAlign: 'center', animation: 'fadeIn 0.5s ease' }}>
-          <Sparkles size={60} color={reward.rarity === 'Epic' ? '#D4850A' : reward.rarity === 'Rare' ? '#4A9E8E' : '#FFF'} style={{ marginBottom: '20px' }} />
+          {reward.name.includes('Kalunga') ? (
+            <img src="/artifacts/kalunga.png" alt="Kalunga Artifact" style={{ width: '120px', height: '120px', marginBottom: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
+          ) : reward.name.includes('Miao') ? (
+            <img src="/artifacts/miao.png" alt="Miao Artifact" style={{ width: '120px', height: '120px', marginBottom: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
+          ) : reward.name.includes('Xingu') ? (
+            <img src="/artifacts/xingu.png" alt="Xingu Artifact" style={{ width: '120px', height: '120px', marginBottom: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
+          ) : (
+            <Sparkles size={60} color={reward.rarity === 'Epic' ? '#D4850A' : reward.rarity === 'Rare' ? '#4A9E8E' : '#FFF'} style={{ marginBottom: '20px' }} />
+          )}
           <div style={{ fontSize: '12px', fontWeight: 700, color: reward.rarity === 'Epic' ? '#D4850A' : reward.rarity === 'Rare' ? '#4A9E8E' : '#FFF', marginBottom: '8px', letterSpacing: '1px' }}>
             {reward.rarity.toUpperCase()} ARTIFACT
           </div>
@@ -44,6 +53,23 @@ const BlindBox: React.FC<{ reward: Artifact, onClaim: () => void, language: stri
   );
 };
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><Mentor /></motion.div>} />
+        <Route path="/talk" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><Talk /></motion.div>} />
+        <Route path="/council" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><Council /></motion.div>} />
+        <Route path="/missions" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><Missions /></motion.div>} />
+        <Route path="/map" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><MapPage /></motion.div>} />
+        <Route path="/dashboard" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><Dashboard /></motion.div>} />
+        <Route path="/gacha" element={<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}><Gacha /></motion.div>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const AppContent = () => {
   const { hasOnboarded, rewardToClaim, claimReward, language } = useUser();
 
@@ -55,15 +81,7 @@ const AppContent = () => {
     <BrowserRouter>
       <TopBar />
       {rewardToClaim && <BlindBox reward={rewardToClaim} onClaim={claimReward} language={language} />}
-      <Routes>
-        <Route path="/" element={<Mentor />} />
-        <Route path="/talk" element={<Talk />} />
-        <Route path="/council" element={<Council />} />
-        <Route path="/missions" element={<Missions />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/gacha" element={<Gacha />} />
-      </Routes>
+      <AnimatedRoutes />
       <BottomNav />
     </BrowserRouter>
   );

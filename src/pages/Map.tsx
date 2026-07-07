@@ -1,10 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Lock, CheckCircle2, Play } from 'lucide-react';
+import { MapPin, Lock, CheckCircle2, Play, Layers, Thermometer, Wind } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { useUser } from '../context/UserContext';
+
+// Fix Leaflet's default icon path issues
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom Icons
+const createIcon = (color: string) => {
+  return new L.DivIcon({
+    className: 'custom-leaflet-icon',
+    html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13]
+  });
+};
+
+const lockedIcon = createIcon('rgba(255,255,255,0.3)');
+const brIcon = createIcon('var(--accent-primary)');
+const cnIcon = createIcon('var(--accent-secondary)');
+const userIcon = new L.DivIcon({
+  className: 'custom-leaflet-icon',
+  html: `<div style="position: relative; width: 16px; height: 16px; background-color: #007AFF; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+           <div style="position: absolute; inset: -10px; border-radius: 50%; border: 2px solid #007AFF; opacity: 0.5; animation: ping 1.5s infinite;"></div>
+           <div style="width: 6px; height: 6px; background-color: white; border-radius: 50%;"></div>
+         </div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8]
+});
+
+const MapUpdater: React.FC<{ userLocation: {lat: number, lng: number} | null }> = ({ userLocation }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (userLocation) {
+      map.setView([userLocation.lat, userLocation.lng], 4);
+    }
+  }, [userLocation, map]);
+  return null;
+};
 
 const Map: React.FC = () => {
   const [selectedCommId, setSelectedCommId] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [mapType, setMapType] = useState<'dark' | 'satellite'>('dark');
   const { communities, exploreCommunity, language } = useUser();
 
   const selectedComm = communities.find(c => c.id === selectedCommId) || null;
@@ -12,12 +56,7 @@ const Map: React.FC = () => {
   useEffect(() => {
     if ('geolocation' in navigator) {
       const watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          // Em um app real, faríamos a conversão de Lat/Lng real para X/Y do Canvas.
-          // Aqui, como é um mapa vetorial estilizado, validamos que o GPS funciona 
-          // e plotamos o ponto relativo ao território atual.
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        },
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => console.log('GPS error:', err),
         { enableHighAccuracy: true, maximumAge: 10000 }
       );
@@ -25,9 +64,22 @@ const Map: React.FC = () => {
     }
   }, []);
 
+  const routePositions: [number, number][] = [
+    [communities[0].lat, communities[0].lng],
+    [communities[1].lat, communities[1].lng]
+  ];
+  if (communities[2].status !== 'locked') {
+    routePositions.push([communities[2].lat, communities[2].lng]);
+  }
+
+  const crossContinentPositions: [number, number][] = [
+    [communities[0].lat, communities[0].lng],
+    [communities[3].lat, communities[3].lng]
+  ];
+
   return (
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: 0 }}>
-      <header style={{ padding: '20px', zIndex: 10, backgroundColor: 'var(--bg-main)' }}>
+      <header style={{ padding: '20px', zIndex: 1000, backgroundColor: 'var(--bg-main)', position: 'relative' }}>
         <div className="text-secondary" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px' }}>
           {language === 'ZH' ? '互动地图' : 'INTERACTIVE MAP'}
         </div>
@@ -38,86 +90,87 @@ const Map: React.FC = () => {
       </header>
 
       {/* Map Area */}
-      <div style={{ flex: 1, position: 'relative', backgroundColor: '#13221C', overflow: 'auto' }}>
-        
-        {/* Movable Map Container (Native Scroll) */}
-        <div style={{ position: 'relative', width: '200%', height: '150%', minHeight: '600px', backgroundColor: '#13221C' }}>
-          
-          <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'linear-gradient(#4A9E8E 1px, transparent 1px), linear-gradient(90deg, #4A9E8E 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-          
-          {/* Connecting Lines (SVG) */}
-          <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none' }}>
-            <path 
-              d={`M ${communities[0].x}% ${communities[0].y}% L ${communities[1].x}% ${communities[1].y}%`} 
-              stroke="rgba(212, 133, 10, 0.5)" strokeWidth="2" strokeDasharray="5,5" fill="none"
+      <div style={{ flex: 1, position: 'relative', backgroundColor: '#13221C' }}>
+        <MapContainer 
+          center={[0, 0]} 
+          zoom={2} 
+          style={{ height: '100%', width: '100%', zIndex: 0 }}
+          zoomControl={false}
+        >
+          {mapType === 'dark' ? (
+            <TileLayer
+              attribution='&copy; OpenStreetMap'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
-            {communities[2].status !== 'locked' && (
-              <path 
-                d={`M ${communities[1].x}% ${communities[1].y}% L ${communities[2].x}% ${communities[2].y}%`} 
-                stroke="rgba(212, 133, 10, 0.5)" strokeWidth="2" strokeDasharray="5,5" fill="none"
-              />
-            )}
-            <path 
-              d={`M ${communities[0].x}% ${communities[0].y}% C 50% 10%, 60% 80%, ${communities[3].x}% ${communities[3].y}%`} 
-              stroke="rgba(74, 158, 142, 0.3)" strokeWidth="2" strokeDasharray="4,4" fill="none"
+          ) : (
+            <TileLayer
+              attribution='&copy; Esri'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
-          </svg>
-
-          {/* Points */}
-          {communities.map(comm => (
-            <div 
-              key={comm.id}
-              onClick={(e) => { e.stopPropagation(); setSelectedCommId(comm.id); }}
-              style={{ 
-                position: 'absolute', 
-                top: `${comm.y}%`, 
-                left: `${comm.x}%`, 
-                width: '24px', 
-                height: '24px', 
-                borderRadius: '12px', 
-                transform: 'translate(-50%, -50%)',
-                backgroundColor: comm.status === 'visited' ? (comm.country === 'BR' ? 'var(--accent-primary)' : 'var(--accent-secondary)') : (comm.status === 'locked' ? 'rgba(255,255,255,0.2)' : 'var(--bg-main)'), 
-                border: comm.status === 'available' ? `3px solid ${comm.country === 'BR' ? 'var(--accent-primary)' : 'var(--accent-secondary)'}` : 'none',
-                cursor: comm.status === 'locked' ? 'not-allowed' : 'pointer', 
-                boxShadow: selectedComm?.id === comm.id ? `0 0 0 6px ${comm.country === 'BR' ? 'rgba(212, 133, 10, 0.3)' : 'rgba(74, 158, 142, 0.3)'}` : 'none',
-                transition: 'all 0.3s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 5
-              }}
-            >
-              {comm.status === 'locked' && <Lock size={12} color="#FFF" />}
-              {comm.status === 'visited' && <CheckCircle2 size={12} color="#FFF" />}
-            </div>
-          ))}
-
-          {/* User Location Pulse */}
-          {userLocation && (
-            <>
-              <div style={{ position: 'absolute', top: '30%', left: '25%', transform: 'translate(-50%, -100%)', backgroundColor: 'var(--accent-primary)', padding: '4px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, color: '#FFF', zIndex: 7, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(212, 133, 10, 0.4)' }}>
-                {language === 'ZH' ? '附近有 2 位探索者' : '2 Explorers Nearby'}
-              </div>
-              <div style={{ position: 'absolute', top: '35%', left: '25%', width: '16px', height: '16px', backgroundColor: '#007AFF', borderRadius: '8px', transform: 'translate(-50%, -50%)', zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                 <div style={{ position: 'absolute', inset: '-10px', borderRadius: '50%', border: '2px solid #007AFF', opacity: 0.5, animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}></div>
-                 <div style={{ width: '6px', height: '6px', backgroundColor: '#FFF', borderRadius: '3px' }}></div>
-              </div>
-            </>
           )}
+          
+          <MapUpdater userLocation={userLocation} />
 
-          {/* Local Guide Pulse */}
-          <div style={{ position: 'absolute', top: '45%', left: '40%', width: '16px', height: '16px', backgroundColor: '#34C759', borderRadius: '8px', transform: 'translate(-50%, -50%)', zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <div style={{ position: 'absolute', top: '-25px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-card)', border: '1px solid #34C759', padding: '2px 6px', borderRadius: '6px', fontSize: '9px', color: '#34C759' }}>
-               {language === 'ZH' ? '在线本地向导' : 'Local Guide Online'}
-             </div>
-             <div style={{ position: 'absolute', inset: '-10px', borderRadius: '50%', border: '2px solid #34C759', opacity: 0.5, animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite 1s' }}></div>
-             <div style={{ width: '6px', height: '6px', backgroundColor: '#FFF', borderRadius: '3px' }}></div>
+          {/* Lines */}
+          <Polyline positions={routePositions} pathOptions={{ color: 'rgba(212, 133, 10, 0.5)', dashArray: '5, 5', weight: 2 }} />
+          <Polyline positions={crossContinentPositions} pathOptions={{ color: 'rgba(74, 158, 142, 0.3)', dashArray: '4, 4', weight: 2 }} />
+
+          {/* Communities */}
+          {communities.map(comm => {
+            let icon = lockedIcon;
+            if (comm.status !== 'locked') {
+              icon = comm.country === 'BR' ? brIcon : cnIcon;
+            }
+            return (
+              <Marker 
+                key={comm.id} 
+                position={[comm.lat, comm.lng]} 
+                icon={icon}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedCommId(comm.id);
+                  },
+                }}
+              >
+              </Marker>
+            );
+          })}
+
+          {/* User Location */}
+          {userLocation && (
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon} zIndexOffset={100}>
+              <Popup autoClose={false}>
+                 <span style={{color: '#000', fontWeight: 'bold'}}>{language === 'ZH' ? '你在哪' : 'You are here'}</span>
+              </Popup>
+            </Marker>
+          )}
+        </MapContainer>
+
+        {/* Map Type Toggle & SOS Button */}
+        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div 
+            onClick={() => {
+              if (window.confirm(language === 'ZH' ? '🚨 发送 SOS 紧急警报？这会将您的精确 GPS 坐标发送给最近的社区向导。' : '🚨 Send SOS Emergency Alert? This will ping your exact GPS coordinates to the nearest community guide.')) {
+                alert(language === 'ZH' ? '✅ SOS 警报已发送！请留在原地，向导正在路上。' : '✅ SOS Alert Sent! Please remain at your location, a guide is on the way.');
+                if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 500]);
+              }
+            }}
+            style={{ backgroundColor: '#FF3B30', padding: '12px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(255,59,48,0.5)', cursor: 'pointer', border: '2px solid rgba(255,255,255,0.5)', width: '48px', height: '48px' }}
+          >
+            <span style={{ color: '#FFF', fontWeight: 900, fontSize: '14px', letterSpacing: '1px' }}>SOS</span>
+          </div>
+          
+          <div 
+            onClick={() => setMapType(mapType === 'dark' ? 'satellite' : 'dark')}
+            style={{ backgroundColor: 'var(--bg-card)', padding: '10px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)', width: '48px', height: '48px' }}
+          >
+            <Layers size={20} color="var(--accent-primary)" />
           </div>
         </div>
 
         {/* Selected Community Card Overlay */}
         {selectedComm && (
-          <div style={{ position: 'sticky', bottom: '20px', left: '20px', right: '20px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', padding: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 20, margin: '20px', marginTop: '-150px' }}>
+          <div style={{ position: 'absolute', bottom: '100px', left: '20px', right: '20px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', padding: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 1000 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <h3 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -125,6 +178,18 @@ const Map: React.FC = () => {
                 </h3>
                 <div style={{ color: 'var(--accent-primary)', fontSize: '14px', marginBottom: '8px' }}>{selectedComm.people}</div>
                 <p className="text-secondary" style={{ fontSize: '12px', marginBottom: '16px' }}>{selectedComm.desc}</p>
+                
+                {/* Environmental Data Bar */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <Thermometer size={14} color="#FF9500" /> 
+                    <span>{selectedComm.country === 'BR' ? '28°C' : '22°C'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <Wind size={14} color="#34C759" /> 
+                    <span>{language === 'ZH' ? '空气质量: 优' : 'AQI: Excellent'}</span>
+                  </div>
+                </div>
               </div>
               <div 
                 style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', cursor: 'pointer' }}
@@ -153,7 +218,7 @@ const Map: React.FC = () => {
       </div>
 
       {/* List Area */}
-      <div style={{ height: '40%', backgroundColor: 'var(--bg-main)', padding: '20px', overflowY: 'auto', paddingBottom: '90px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ height: '35%', backgroundColor: 'var(--bg-main)', padding: '20px', overflowY: 'auto', paddingBottom: '90px', borderTop: '1px solid rgba(255,255,255,0.05)', position: 'relative', zIndex: 10 }}>
         <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '16px' }}>
           {language === 'ZH' ? '所有社区' : 'ALL COMMUNITIES'}
         </h2>

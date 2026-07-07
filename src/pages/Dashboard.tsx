@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { ChevronLeft, Users, DollarSign, BrainCircuit, Activity, ShieldCheck, ArrowUpRight, Building2, Leaf, BarChart3, MapPin, Navigation, Store, Map } from 'lucide-react';
+import { ChevronLeft, Users, DollarSign, BrainCircuit, Activity, ShieldCheck, ArrowUpRight, Building2, Leaf, BarChart3, MapPin, Navigation, Store, Map, Smartphone, Fingerprint, CheckCircle2, XCircle, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
@@ -10,6 +10,20 @@ const Dashboard: React.FC = () => {
   const [radarDistance, setRadarDistance] = useState<string | null>(null);
   const [isScanningLocation, setIsScanningLocation] = useState(false);
   const [localRoute, setLocalRoute] = useState<{name: string, type: string, dist: string}[] | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [pendingArtifacts, setPendingArtifacts] = useState([
+    { id: 1, user: 'Tourist_Ana', img: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=400', desc: 'Is this the sacred waterfall?', status: 'pending' },
+    { id: 2, user: 'JohnDoe', img: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=400', desc: 'Found this clay pot fragment', status: 'pending' }
+  ]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   const handleRadar = () => {
     setIsScanningLocation(true);
@@ -30,9 +44,27 @@ const Dashboard: React.FC = () => {
         <div onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
           <ChevronLeft size={28} />
         </div>
-        <h1 style={{ fontSize: '24px', margin: 0 }}>
+        <h1 style={{ fontSize: '24px', margin: 0, flex: 1 }}>
           {language === 'ZH' ? '社区控制面板' : 'Community Dashboard'}
         </h1>
+        <button 
+          onClick={() => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              deferredPrompt.userChoice.then((choiceResult: any) => {
+                if (choiceResult.outcome === 'accepted') {
+                  console.log('User accepted the A2HS prompt');
+                }
+                setDeferredPrompt(null);
+              });
+            } else {
+              alert(language === 'ZH' ? '应用可能已经安装，或者请通过浏览器菜单"添加到主屏幕"进行安装。' : 'App may already be installed, or please use the browser menu to "Add to Home Screen".');
+            }
+          }}
+          style={{ backgroundColor: deferredPrompt ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)', color: deferredPrompt ? 'var(--bg-main)' : 'var(--text-secondary)', border: 'none', padding: '8px 16px', borderRadius: '16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Smartphone size={14} />
+          {language === 'ZH' ? '安装应用' : 'Install App'}
+        </button>
       </header>
 
       {/* Tabs / Toggle */}
@@ -55,6 +87,73 @@ const Dashboard: React.FC = () => {
 
       {!b2gMode ? (
         <>
+          {/* Sovereign Identity Banner */}
+          <div style={{ backgroundColor: 'rgba(52, 199, 89, 0.1)', padding: '16px', borderRadius: '20px', border: '1px solid rgba(52, 199, 89, 0.3)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', animation: 'fadeIn 0.5s ease-out' }}>
+            <div style={{ position: 'relative' }}>
+              <img src="https://i.pravatar.cc/150?img=68" alt="Leader" style={{ width: '56px', height: '56px', borderRadius: '28px', border: '2px solid #34C759', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: -2, right: -2, backgroundColor: '#34C759', borderRadius: '50%', padding: '4px' }}>
+                <Fingerprint size={12} color="#FFF" />
+              </div>
+            </div>
+            <div>
+              <div style={{ color: '#34C759', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', marginBottom: '4px' }}>
+                {language === 'ZH' ? '主权身份已验证' : 'SOVEREIGN IDENTITY VERIFIED'}
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600 }}>
+                {language === 'ZH' ? '欢迎回来，Huni 长老' : 'Welcome back, Elder Huni'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>
+                {language === 'ZH' ? 'Web3 DID 认证 (0x8F2...9A1)' : 'Auth: Web3 DID (0x8F2...9A1)'}
+              </div>
+            </div>
+          </div>
+
+          {/* Artifact Validation Inbox (Tinder-style approval) */}
+          <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Camera size={18} color="var(--accent-secondary)" />
+                <h3 style={{ fontSize: '16px', margin: 0 }}>{language === 'ZH' ? '文化审核收件箱' : 'Cultural Review Inbox'}</h3>
+              </div>
+              <div style={{ backgroundColor: '#FF3B30', color: '#FFF', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                {pendingArtifacts.filter(a => a.status === 'pending').length} {language === 'ZH' ? '待审核' : 'Pending'}
+              </div>
+            </div>
+            
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              {language === 'ZH' ? '审核游客拍摄的照片。如果是神圣/私密物品，请拒绝分享。' : 'Review photos taken by tourists. Reject if it is a sacred/private artifact.'}
+            </p>
+
+            <div style={{ display: 'flex', overflowX: 'auto', gap: '12px', paddingBottom: '8px', scrollbarWidth: 'none' }}>
+              {pendingArtifacts.map(artifact => artifact.status === 'pending' && (
+                <div key={artifact.id} style={{ minWidth: '160px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '16px', overflow: 'hidden' }}>
+                  <div style={{ height: '120px', backgroundImage: `url(${artifact.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                  <div style={{ padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>@{artifact.user}</div>
+                    <div style={{ fontSize: '12px', marginBottom: '12px', lineHeight: 1.3 }}>"{artifact.desc}"</div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={() => setPendingArtifacts(prev => prev.map(p => p.id === artifact.id ? { ...p, status: 'rejected' } : p))}
+                        style={{ flex: 1, padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255,59,48,0.1)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.3)', display: 'flex', justifyContent: 'center', cursor: 'pointer' }}>
+                        <XCircle size={16} />
+                      </button>
+                      <button 
+                        onClick={() => setPendingArtifacts(prev => prev.map(p => p.id === artifact.id ? { ...p, status: 'approved' } : p))}
+                        style={{ flex: 1, padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(52,199,89,0.1)', color: '#34C759', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', justifyContent: 'center', cursor: 'pointer' }}>
+                        <CheckCircle2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {pendingArtifacts.filter(a => a.status === 'pending').length === 0 && (
+                <div style={{ width: '100%', padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                  {language === 'ZH' ? '干得好！收件箱已清空。' : 'All caught up! Inbox is empty.'}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Community Info Card */}
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '24px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', backgroundColor: 'var(--accent-primary)', opacity: 0.1, borderRadius: '50%', filter: 'blur(30px)' }}></div>
@@ -203,7 +302,10 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                       <span style={{ fontSize: '14px', fontWeight: 700, color: '#34C759', marginBottom: '4px' }}>{business.dist}</span>
-                      <button style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '8px', backgroundColor: 'var(--accent-secondary)', color: 'var(--bg-main)', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                      <button 
+                        onClick={() => navigate('/map')}
+                        style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '8px', backgroundColor: 'var(--accent-secondary)', color: 'var(--bg-main)', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Navigation size={10} />
                         {language === 'ZH' ? '导航' : 'NAVIGATE'}
                       </button>
                     </div>
@@ -266,6 +368,33 @@ const Dashboard: React.FC = () => {
             ? (language === 'ZH' ? '停用 AI (切换为真实记录)' : 'Disable AI (Switch to Authentic Records)') 
             : (language === 'ZH' ? '启用 AI (恢复智能功能)' : 'Enable AI (Restore Smart Features)')}
         </button>
+      </div>
+
+      {/* Cultural Library / Suggested Readings */}
+      <div style={{ marginTop: '24px', backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '24px', position: 'relative' }}>
+        <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Leaf size={18} color="var(--accent-primary)" />
+          {language === 'ZH' ? '文化阅读推荐' : 'Cultural Reading List'}
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+          {language === 'ZH' ? '深入了解您正在探索的社区的历史。' : 'Dive deeper into the history of the communities you are exploring.'}
+        </p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[
+            { title: language === 'ZH' ? 'Kalunga：抵抗与自然守护者' : 'Kalunga: Resistance & Nature Guardians', source: 'NatGeo / UNESCO', url: 'https://en.wikipedia.org/wiki/Kalunga' },
+            { title: language === 'ZH' ? 'Xingu：连接天空与大地的神话' : 'Xingu: Myths connecting Sky and Earth', source: 'Instituto Socioambiental (ISA)', url: 'https://pib.socioambiental.org/en/Main_Page' },
+            { title: language === 'ZH' ? 'Miao族银饰：穿在身上的历史' : 'Miao Silver: History worn on the body', source: 'Cultural Bridges Magazine', url: 'https://en.wikipedia.org/wiki/Miao_people' }
+          ].map((item, i) => (
+            <div key={i} onClick={() => window.open(item.url, '_blank')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '16px', cursor: 'pointer' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{item.title}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.source}</div>
+              </div>
+              <ArrowUpRight size={16} color="var(--accent-primary)" />
+            </div>
+          ))}
+        </div>
       </div>
       
       {/* Platform Activity */}

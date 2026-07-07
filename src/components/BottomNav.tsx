@@ -32,15 +32,19 @@ const BottomNav: React.FC = () => {
 
 const styles = {
   nav: {
-    position: 'absolute' as const,
+    position: 'fixed' as const,
     bottom: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
     width: '100%',
+    maxWidth: '480px', // Matches #root max-width
     height: '70px',
     backgroundColor: 'var(--bg-card)',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
     borderTop: '1px solid rgba(255,255,255,0.1)',
+    zIndex: 1000,
   },
   link: {
     display: 'flex',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { ChevronLeft, PackageOpen, Sparkles, AlertCircle, Share2, Hexagon } from 'lucide-react';
+import { ChevronLeft, Sparkles, AlertCircle, Share2, Hexagon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Gacha: React.FC = () => {
@@ -57,21 +57,33 @@ const Gacha: React.FC = () => {
           {!reward ? (
             <>
               <div style={{ marginBottom: '40px', position: 'relative' }}>
-                <PackageOpen 
-                  size={120} 
-                  color={xp >= 100 ? "var(--accent-primary)" : "rgba(255,255,255,0.2)"} 
-                  style={{ animation: isOpening ? 'shake 0.5s infinite' : 'pulse 2s infinite' }} 
-                />
+                <div 
+                  style={{ 
+                    width: '120px', 
+                    height: '160px', 
+                    backgroundColor: xp >= 100 ? '#E53935' : '#555', 
+                    borderRadius: '16px', 
+                    border: xp >= 100 ? '4px solid #FFC107' : '4px solid #777', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    boxShadow: xp >= 100 ? '0 10px 30px rgba(229, 57, 53, 0.5)' : 'none',
+                    animation: isOpening ? 'shake 0.5s infinite' : 'pulse 2s infinite'
+                  }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '28px', backgroundColor: xp >= 100 ? '#FFC107' : '#777', display: 'flex', alignItems: 'center', justifyContent: 'center', color: xp >= 100 ? '#E53935' : '#333', fontSize: '28px', fontWeight: 'bold' }}>
+                    福
+                  </div>
+                </div>
               </div>
 
               <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                 <h1 style={{ fontSize: '24px', marginBottom: '8px' }}>
-                  {language === 'ZH' ? '文化盲盒' : 'Cultural Blind Box'}
+                  {language === 'ZH' ? '文化红包' : 'Cultural Hongbao'}
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '280px', margin: '0 auto', lineHeight: 1.5 }}>
                   {language === 'ZH' 
-                    ? '使用 100 XP 兑换盲盒，发现珍贵的数字文物并支持当地社区！' 
-                    : 'Spend 100 XP to open a blind box. Discover rare digital artifacts and support the local community!'}
+                    ? '打开您的每日红包以赚取现实世界的代金券和数字文物。' 
+                    : 'Open your daily Red Packet to earn real-world vouchers and digital artifacts.'}
                 </p>
               </div>
 
@@ -120,6 +132,10 @@ const Gacha: React.FC = () => {
               
               <h2 style={{ fontSize: '28px', marginBottom: '16px' }}>{reward.name}</h2>
               
+              <div style={{ backgroundColor: 'rgba(255, 193, 7, 0.1)', color: '#FFC107', padding: '12px 24px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, marginBottom: '24px', border: '1px solid rgba(255,193,7,0.3)', display: 'inline-block' }}>
+                {language === 'ZH' ? '🎁 包含 15% 线下折扣券！' : '🎁 Includes 15% O2O Voucher!'}
+              </div>
+              
               {/* Web3 / Blockchain Badge */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(130, 71, 229, 0.15)', border: '1px solid rgba(130, 71, 229, 0.4)', padding: '6px 12px', borderRadius: '12px', marginBottom: '24px' }}>
                 <Hexagon size={14} color="#8247E5" />
@@ -128,12 +144,18 @@ const Gacha: React.FC = () => {
                 </span>
               </div>
               
-              <div style={{ backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '16px', marginBottom: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                  {language === 'ZH' 
-                    ? '恭喜你！该数字文物的 50% 收益已直接捐赠给创作者社区。' 
-                    : 'Congratulations! 50% of the proceeds from this digital artifact have been directly donated to the creator community.'}
-                </p>
+              <div style={{ backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '16px', marginBottom: '32px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'left' }}>
+                <img src="https://i.pravatar.cc/150?img=45" alt="Artisan" style={{ width: '48px', height: '48px', borderRadius: '24px', border: '2px solid var(--accent-primary)' }} />
+                <div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                    {language === 'ZH' 
+                      ? '“感谢您的支持！您的红包直接帮助我为孙女买书。”' 
+                      : '"Thank you! Your Red Packet directly helped me buy books for my granddaughter."'}
+                  </p>
+                  <p style={{ fontSize: '10px', color: 'var(--accent-primary)', marginTop: '6px', fontWeight: 700, letterSpacing: '0.5px' }}>
+                    — {language === 'ZH' ? '工匠 玛利亚' : 'ARTISAN MARIA'}
+                  </p>
+                </div>
               </div>
               
               <button 

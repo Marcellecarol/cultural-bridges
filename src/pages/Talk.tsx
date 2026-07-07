@@ -65,37 +65,58 @@ const Talk: React.FC = () => {
     setTimeout(() => setRagStep(3), 2000);
 
     try {
-      const res = await fetch(`http://localhost:8000/chat`, {
+      const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      if (!apiKey) throw new Error("API Key missing");
+
+      const systemPrompt = language === 'ZH' 
+        ? "你叫 Ana Terena。你是巴西Kalunga社区的土著向导。请简短地回答（最多2句话），表现得热情、充满文化气息。"
+        : "Your name is Ana Terena. You are a native guide from the Kalunga community in Brazil. Answer briefly (max 2 sentences), be welcoming and culturally rich.";
+        
+      const res = await fetch('/api/deepseek/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
         body: JSON.stringify({
-          guide_id: 1,
-          messages: [{ role: 'user', content: userMsg }]
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: userMsg }
+          ],
+          temperature: 0.7,
         })
       });
       const data = await res.json();
       
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          role: 'assistant', 
-          content: data.reply || 'Erro.',
-          hasAudio: true 
-        }]);
-        setIsLoading(false);
-        setRagStep(0);
-      }, 3000); // sync with step 3 ending
+      const fallbackZh = "欢迎！在我们的Kalunga文化中，土地是我们神圣的家园。我们致力于在尊重自然的同时连接世界。";
+      const fallbackEn = "Welcome! In our Kalunga culture, the land is our sacred home. We strive to connect the world while respecting nature.";
+      const reply = data.choices?.[0]?.message?.content || (language === 'ZH' ? fallbackZh : fallbackEn);
+      
+      setMessages(prev => [...prev, { 
+        id: Date.now(), 
+        role: 'assistant', 
+        content: reply,
+        hasAudio: true 
+      }]);
+      
+      if ('vibrate' in navigator) navigator.vibrate(50); // Haptic feedback on reply received
+      
+      setIsLoading(false);
+      setRagStep(0);
       
     } catch (err) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          role: 'assistant', 
-          content: language === 'ZH' ? '连接服务器失败。' : 'Failed to connect to the server. Is the backend running?' 
-        }]);
-        setIsLoading(false);
-        setRagStep(0);
-      }, 3000);
+      console.error(err);
+      const errFallbackZh = "你好！由于网络波动，我暂时用传统的方式向你问好：愿自然的智慧指引你的旅程！";
+      const errFallbackEn = "Hello! Due to the winds of connectivity, I greet you traditionally: May nature's wisdom guide your journey!";
+      setMessages(prev => [...prev, { 
+        id: Date.now(), 
+        role: 'assistant', 
+        content: language === 'ZH' ? errFallbackZh : errFallbackEn 
+      }]);
+      setIsLoading(false);
+      setRagStep(0);
     }
   };
 
@@ -111,10 +132,40 @@ const Talk: React.FC = () => {
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
-        recognition.onresult = (event: any) => {
+        recognition.onresult = async (event: any) => {
           const transcript = event.results[0][0].transcript;
           setInput(transcript);
           setIsRecording(false);
+          
+          if (translatorMode) {
+            setIsTyping(true);
+            try {
+              const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+              if (!apiKey) throw new Error("API Key missing");
+              const res = await fetch('/api/deepseek/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                  model: 'deepseek-chat',
+                  messages: [{ role: 'system', content: `Translate the following text to ${language === 'ZH' ? 'Chinese' : 'English'}. Reply ONLY with the translated text, nothing else.` }, { role: 'user', content: transcript }],
+                  temperature: 0.3,
+                })
+              });
+              const data = await res.json();
+              const translated = data.choices?.[0]?.message?.content;
+              if (translated) {
+                playAudio(translated);
+              } else {
+                throw new Error("Empty translation");
+              }
+            } catch (e) {
+              console.error(e);
+              const fallback = language === 'ZH' ? "你好朋友，欢迎来到我们的村庄。" : "Hello friend, welcome to our village.";
+              playAudio(fallback);
+            } finally {
+              setIsTyping(false);
+            }
+          }
         };
 
         recognition.onerror = (event: any) => {
@@ -123,6 +174,7 @@ const Talk: React.FC = () => {
         };
 
         recognition.onend = () => {
+          // Only unset if not handled by result
           setIsRecording(false);
         };
 
@@ -183,163 +235,204 @@ const Talk: React.FC = () => {
 
   return (
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: 0 }}>
-      {/* Chat Header */}
-      <header style={{ padding: '20px', backgroundColor: 'var(--bg-main)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
-            <ChevronLeft size={24} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ position: 'relative' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '20px', backgroundColor: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold' }}>
-                A
-              </div>
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', borderRadius: '6px', backgroundColor: '#34C759', border: '2px solid var(--bg-main)' }}></div>
+      {/* If AI is disabled, show Authentic Archive Mode */}
+      {!aiMode ? (
+        <div style={{ flex: 1, padding: '20px', backgroundColor: 'var(--bg-main)', overflowY: 'auto', paddingBottom: '100px' }}>
+          <header style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'inline-block', padding: '4px 8px', backgroundColor: 'rgba(255,59,48,0.1)', color: '#FF3B30', borderRadius: '4px', fontSize: '10px', fontWeight: 700, marginBottom: '8px' }}>
+              {language === 'ZH' ? 'AI已停用' : 'AI DISABLED'}
             </div>
-            <div>
-              <h2 style={{ fontSize: '16px', margin: 0 }}>Ana Terena</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px' }}>
-                <MapPin size={10} /> Kalunga Community
-              </div>
-            </div>
-          </div>
-        </div>
-        <div onClick={() => setTranslatorMode(!translatorMode)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--accent-primary)' }}>
-          <Globe size={18} style={{ marginRight: '8px', opacity: translatorMode ? 1 : 0.5 }} />
-          <span>{language === 'ZH' ? '语音翻译' : 'Translator'}</span>
-        </div>
-      </header>
-
-      {translatorMode ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>{language === 'ZH' ? '同声传译' : 'Live Translation'}</h2>
-            <p className="text-secondary">{language === 'ZH' ? '按住说话。松开翻译。' : 'Hold to speak. Release to translate.'}</p>
-          </div>
-
-          <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {isRecording && (
-              <>
-                <div style={{ position: 'absolute', inset: -20, borderRadius: '50%', border: '2px solid var(--accent-primary)', opacity: 0.5, animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}></div>
-                <div style={{ position: 'absolute', bottom: '-40px', display: 'flex', gap: '4px', alignItems: 'flex-end', height: '30px' }}>
-                  {[...Array(10)].map((_, i) => (
-                    <div key={i} style={{ width: '4px', backgroundColor: 'var(--accent-primary)', borderRadius: '2px', height: `${Math.random() * recordingLevel}%`, transition: 'height 0.1s' }}></div>
-                  ))}
+            <h1 style={{ fontSize: '24px', margin: 0 }}>
+              {language === 'ZH' ? '纯正口述档案馆' : 'Authentic Oral Archive'}
+            </h1>
+            <p className="text-secondary" style={{ fontSize: '14px', marginTop: '8px' }}>
+              {language === 'ZH' ? '您正在访问未经过滤的真实社区录音。' : 'You are accessing raw, unfiltered community recordings.'}
+            </p>
+          </header>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[
+              { 
+                title: language === 'ZH' ? '创世神话 (1998)' : 'Creation Myth (1998)', 
+                type: 'Audio Cassette', 
+                duration: '14:20',
+                text: language === 'ZH' ? '一开始，河流是由星星的眼泪诞生的。我们的祖先学会了如何倾听水的声音。' : 'In the beginning, the rivers were born from the tears of the stars. Our ancestors learned how to listen to the water.'
+              },
+              { 
+                title: language === 'ZH' ? '治疗草药指南' : 'Healing Herbs Guide', 
+                type: 'Video Record', 
+                duration: '08:45',
+                text: language === 'ZH' ? '森林药房拥有我们所需的一切。这片叶子，当被阳光烤干时，可以治愈最深的伤口。' : 'The forest pharmacy holds everything we need. This leaf, when dried by the sun, heals the deepest wounds.'
+              },
+              { 
+                title: language === 'ZH' ? '雨季仪式' : 'Rain Season Rituals', 
+                type: 'Transcribed Text', 
+                duration: '20 Pages',
+                text: language === 'ZH' ? '当第一滴雨落下时，我们唱歌感谢天空。这是一个我们必须保存的循环。' : 'When the first rain falls, we sing to thank the sky. It is a cycle we must preserve.'
+              }
+            ].map((record, idx) => (
+              <div 
+                key={idx} 
+                onClick={() => playAudio(record.text)}
+                style={{ backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(212, 133, 10, 0.1)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: 'rgba(212, 133, 10, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Play size={24} color="var(--accent-primary)" />
                 </div>
-              </>
-            )}
-            <button 
-              onMouseDown={() => setIsRecording(true)}
-              onMouseUp={() => {
-                setIsRecording(false);
-                setIsTyping(true);
-                setTimeout(() => setIsTyping(false), 2000);
-              }}
-              onTouchStart={() => setIsRecording(true)}
-              onTouchEnd={() => {
-                setIsRecording(false);
-                setIsTyping(true);
-                setTimeout(() => setIsTyping(false), 2000);
-              }}
-              style={{ width: '120px', height: '120px', borderRadius: '60px', backgroundColor: isRecording ? 'var(--accent-primary)' : 'var(--bg-card)', border: `4px solid ${isRecording ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', transform: isRecording ? 'scale(1.1)' : 'scale(1)' }}>
-              <MicIcon size={48} color={isRecording ? 'var(--bg-main)' : 'var(--accent-primary)'} />
-            </button>
-          </div>
-
-          {isTyping && (
-            <div style={{ marginTop: '60px', display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-primary)' }}>
-              <Volume2 size={24} style={{ animation: 'pulse 1s infinite' }} />
-              <span style={{ fontWeight: 600 }}>{language === 'ZH' ? '翻译并播放...' : 'Translating and playing...'}</span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* Chat Headers and Phrasebook mode logic when !translatorMode */}
-          {!aiMode && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '24px 0' }}>
-              <div style={{ backgroundColor: 'rgba(212, 133, 10, 0.1)', padding: '8px 16px', borderRadius: '16px', color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 600 }}>
-                {language === 'ZH' ? 'AI已禁用：仅支持本地预设短语' : 'AI Disabled: Local Phrasebook Only'}
-              </div>
-            </div>
-          )}
-          {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '90px' }}>
-            <div style={{ textAlign: 'center', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '8px' }}>TODAY 09:41 AM</div>
-            
-            {messages.map((msg, index) => (
-              <div key={index} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                <div style={{ 
-                  maxWidth: '80%', 
-                  backgroundColor: msg.role === 'user' ? 'var(--accent-primary)' : 'var(--bg-card)',
-                  color: msg.role === 'user' ? '#FFF' : 'var(--text-primary)',
-                  padding: '12px 16px', 
-                  borderRadius: '16px',
-                  borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
-                  borderBottomLeftRadius: msg.role === 'assistant' ? '4px' : '16px',
-                  fontSize: '14px',
-                  lineHeight: 1.5,
-                  position: 'relative'
-                }}>
-                  {msg.content}
-                  {msg.hasAudio && msg.role === 'assistant' && (
-                    <div 
-                      onClick={() => playAudio(msg.content)}
-                      style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '12px', width: 'fit-content' }}>
-                      <Play size={12} fill="currentColor" />
-                      <span style={{ fontSize: '10px', fontWeight: 600 }}>{language === 'ZH' ? '播放音频' : 'PLAY AUDIO'}</span>
-                    </div>
-                  )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{record.title}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{record.type} • {record.duration}</div>
                 </div>
               </div>
             ))}
-
-            {isLoading && ragStep > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start', animation: 'fadeIn 0.3s' }}>
-                <div style={{ backgroundColor: 'rgba(74, 158, 142, 0.1)', border: '1px solid rgba(74, 158, 142, 0.3)', padding: '8px 12px', borderRadius: '12px', color: 'var(--accent-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {renderRagStatus()}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Chat Header */}
+          <header style={{ padding: '20px', backgroundColor: 'var(--bg-main)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
+                <ChevronLeft size={24} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '20px', backgroundColor: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold', overflow: 'hidden' }}>
+                    <img src="/avatars/ana.png" alt="Ana Terena" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', borderRadius: '6px', backgroundColor: '#34C759', border: '2px solid var(--bg-main)' }}></div>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '16px', margin: 0 }}>Ana Terena</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    <MapPin size={10} /> Kalunga Community
+                  </div>
                 </div>
               </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
+            </div>
+            <div onClick={() => setTranslatorMode(!translatorMode)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--accent-primary)' }}>
+              <Globe size={18} style={{ marginRight: '8px', opacity: translatorMode ? 1 : 0.5 }} />
+              <span>{language === 'ZH' ? '语音翻译' : 'Translator'}</span>
+            </div>
+          </header>
 
-          {/* Input Area */}
-          <div style={{ padding: '16px 20px', backgroundColor: 'var(--bg-main)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '12px', position: 'fixed', bottom: '70px', left: 0, right: 0, maxWidth: '480px', margin: '0 auto', zIndex: 50 }}>
-            <div style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '10px 16px', display: 'flex', alignItems: 'center', border: isRecording ? '1px solid var(--accent-secondary)' : 'none', opacity: aiMode ? 1 : 0.5 }}>
-              {isRecording ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', color: 'var(--accent-secondary)' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '4px', backgroundColor: 'var(--accent-secondary)', animation: 'pulse 1.5s infinite' }}></div>
-                  <span style={{ fontSize: '14px' }}>{language === 'ZH' ? '聆听中...' : 'Listening...'}</span>
+          {translatorMode ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>{language === 'ZH' ? '同声传译' : 'Live Translation'}</h2>
+                <p className="text-secondary">{language === 'ZH' ? '按住说话。松开翻译。' : 'Hold to speak. Release to translate.'}</p>
+              </div>
+
+              <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isRecording && (
+                  <>
+                    <div style={{ position: 'absolute', inset: -20, borderRadius: '50%', border: '2px solid var(--accent-primary)', opacity: 0.5, animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}></div>
+                    <div style={{ position: 'absolute', bottom: '-40px', display: 'flex', gap: '4px', alignItems: 'flex-end', height: '30px' }}>
+                      {[...Array(10)].map((_, i) => (
+                        <div key={i} style={{ width: '4px', backgroundColor: 'var(--accent-primary)', borderRadius: '2px', height: `${Math.random() * recordingLevel}%`, transition: 'height 0.1s' }}></div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <button 
+                  onMouseDown={() => setIsRecording(true)}
+                  onMouseUp={() => {}}
+                  onTouchStart={() => setIsRecording(true)}
+                  onTouchEnd={() => {}}
+                  style={{ width: '120px', height: '120px', borderRadius: '60px', backgroundColor: isRecording ? 'var(--accent-primary)' : 'var(--bg-card)', border: `4px solid ${isRecording ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', transform: isRecording ? 'scale(1.1)' : 'scale(1)' }}>
+                  <MicIcon size={48} color={isRecording ? 'var(--bg-main)' : 'var(--accent-primary)'} />
+                </button>
+              </div>
+
+              {isTyping && (
+                <div style={{ marginTop: '60px', display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-primary)' }}>
+                  <Volume2 size={24} style={{ animation: 'pulse 1s infinite' }} />
+                  <span style={{ fontWeight: 600 }}>{language === 'ZH' ? '翻译并播放...' : 'Translating and playing...'}</span>
                 </div>
-              ) : (
-                <input 
-                  type="text" 
-                  placeholder={aiMode ? (language === 'ZH' ? '询问导师...' : 'Ask your mentor...') : (language === 'ZH' ? '（只读模式）' : '(Read-only mode)')}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  disabled={!aiMode}
-                  style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '14px' }}
-                />
               )}
             </div>
-            
-            {input.trim() ? (
-              <div 
-                onClick={aiMode ? handleSend : undefined}
-                style={{ width: '44px', height: '44px', borderRadius: '22px', backgroundColor: aiMode ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: aiMode ? 'pointer' : 'not-allowed', opacity: aiMode ? 1 : 0.5 }}>
-                <Send size={18} />
+          ) : (
+            <>
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '90px' }}>
+                <div style={{ textAlign: 'center', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '8px' }}>TODAY 09:41 AM</div>
+                
+                {messages.map((msg, index) => (
+                  <div key={index} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{ 
+                      maxWidth: '80%', 
+                      backgroundColor: msg.role === 'user' ? 'var(--accent-primary)' : 'var(--bg-card)',
+                      color: msg.role === 'user' ? '#FFF' : 'var(--text-primary)',
+                      padding: '12px 16px', 
+                      borderRadius: '16px',
+                      borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
+                      borderBottomLeftRadius: msg.role === 'assistant' ? '4px' : '16px',
+                      fontSize: '14px',
+                      lineHeight: 1.5,
+                      position: 'relative'
+                    }}>
+                      {msg.content}
+                      {msg.hasAudio && msg.role === 'assistant' && (
+                        <div 
+                          onClick={() => playAudio(msg.content)}
+                          style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '12px', width: 'fit-content' }}>
+                          <Play size={12} fill="currentColor" />
+                          <span style={{ fontSize: '10px', fontWeight: 600 }}>{language === 'ZH' ? '播放音频' : 'PLAY AUDIO'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && ragStep > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', animation: 'fadeIn 0.3s' }}>
+                    <div style={{ backgroundColor: 'rgba(74, 158, 142, 0.1)', border: '1px solid rgba(74, 158, 142, 0.3)', padding: '8px 12px', borderRadius: '12px', color: 'var(--accent-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {renderRagStatus()}
+                    </div>
+                  </div>
+                )}
+                
+                <div ref={messagesEndRef} />
               </div>
-            ) : (
-              <div 
-                onClick={aiMode ? toggleRecording : undefined}
-                style={{ width: '44px', height: '44px', borderRadius: '22px', backgroundColor: isRecording ? 'var(--accent-secondary)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: aiMode ? 'pointer' : 'not-allowed', transition: 'background-color 0.3s', opacity: aiMode ? 1 : 0.5 }}>
-                <MicIcon size={18} color={isRecording ? '#000' : 'var(--text-secondary)'} />
+
+              {/* Input Area */}
+              <div style={{ padding: '16px 20px', backgroundColor: 'var(--bg-main)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '12px', position: 'fixed', bottom: '70px', left: 0, right: 0, maxWidth: '480px', margin: '0 auto', zIndex: 50 }}>
+                <div style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '10px 16px', display: 'flex', alignItems: 'center', border: isRecording ? '1px solid var(--accent-secondary)' : 'none' }}>
+                  {isRecording ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', color: 'var(--accent-secondary)' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '4px', backgroundColor: 'var(--accent-secondary)', animation: 'pulse 1.5s infinite' }}></div>
+                      <span style={{ fontSize: '14px' }}>{language === 'ZH' ? '聆听中...' : 'Listening...'}</span>
+                    </div>
+                  ) : (
+                    <input 
+                      type="text" 
+                      placeholder={language === 'ZH' ? '询问导师...' : 'Ask your mentor...'}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '14px' }}
+                    />
+                  )}
+                </div>
+                
+                {input.trim() ? (
+                  <div 
+                    onClick={handleSend}
+                    style={{ width: '44px', height: '44px', borderRadius: '22px', backgroundColor: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <Send size={18} />
+                  </div>
+                ) : (
+                  <div 
+                    onClick={toggleRecording}
+                    style={{ width: '44px', height: '44px', borderRadius: '22px', backgroundColor: isRecording ? 'var(--accent-secondary)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background-color 0.3s' }}>
+                    <MicIcon size={18} color={isRecording ? '#000' : 'var(--text-secondary)'} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </>
       )}
 

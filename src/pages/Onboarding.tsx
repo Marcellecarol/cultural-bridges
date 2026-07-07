@@ -6,6 +6,7 @@ const Onboarding: React.FC = () => {
   const { completeOnboarding, language } = useUser();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState('/avatar_boy.png');
   const [interest, setInterest] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -15,14 +16,14 @@ const Onboarding: React.FC = () => {
     else if (step === 2 && interest) {
       setIsGenerating(true);
       setTimeout(() => {
-        completeOnboarding(name);
+        completeOnboarding(name, avatar);
       }, 2000);
     }
   };
 
   if (isGenerating) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B1310' }}>
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundImage: 'linear-gradient(rgba(11, 19, 16, 0.8), rgba(11, 19, 16, 0.95)), url(/onboarding-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <Sparkles size={48} color="var(--accent-primary)" style={{ animation: 'pulse 1.5s infinite', marginBottom: '24px' }} />
         <h2 style={{ fontSize: '20px', marginBottom: '8px', color: '#FFF' }}>
           {language === 'ZH' ? '生成您的导师...' : 'Generating your Mentor...'}
@@ -35,8 +36,8 @@ const Onboarding: React.FC = () => {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', padding: '40px 20px', backgroundColor: '#0B1310' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', padding: '40px 20px', backgroundImage: 'linear-gradient(to bottom, rgba(11, 19, 16, 0.4), rgba(11, 19, 16, 1)), url(/onboarding-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '40px' }}>
         {step === 1 ? (
           <div style={{ animation: 'fadeIn 0.5s ease' }}>
             <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'center' }}>
@@ -44,8 +45,8 @@ const Onboarding: React.FC = () => {
                 <Compass size={32} color="var(--accent-primary)" />
               </div>
             </div>
-            <h1 style={{ fontSize: '28px', marginBottom: '12px', textAlign: 'center' }}>
-              {language === 'ZH' ? '欢迎来到故事之地' : 'Welcome to Land of Stories'}
+            <h1 style={{ fontSize: '36px', marginBottom: '12px', textAlign: 'center', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+              {language === 'ZH' ? '欢迎来到故事之地' : 'Land of Stories'}
             </h1>
             <p className="text-secondary" style={{ fontSize: '14px', textAlign: 'center', marginBottom: '40px' }}>
               {language === 'ZH' ? '您的文化桥梁之旅从这里开始。您叫什么名字？' : 'Your journey across cultural bridges starts here. What is your name?'}
@@ -55,8 +56,19 @@ const Onboarding: React.FC = () => {
               placeholder={language === 'ZH' ? '输入您的名字' : 'Enter your name'}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={{ width: '100%', backgroundColor: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', padding: '16px', borderRadius: '12px', color: '#FFF', fontSize: '16px', outline: 'none' }}
+              style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', padding: '16px', borderRadius: '16px', color: '#FFF', fontSize: '16px', outline: 'none', boxShadow: '0 4px 30px rgba(0,0,0,0.1)' }}
             />
+            
+            <div style={{ marginTop: '24px', display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <div 
+                onClick={() => setAvatar('/avatar_boy.png')}
+                style={{ width: '64px', height: '64px', borderRadius: '32px', backgroundImage: 'url(/avatar_boy.png)', backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'pointer', border: avatar === '/avatar_boy.png' ? '3px solid var(--accent-primary)' : '3px solid transparent', opacity: avatar === '/avatar_boy.png' ? 1 : 0.5, transition: 'all 0.2s' }}
+              />
+              <div 
+                onClick={() => setAvatar('/avatar_girl.png')}
+                style={{ width: '64px', height: '64px', borderRadius: '32px', backgroundImage: 'url(/avatar_girl.png)', backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'pointer', border: avatar === '/avatar_girl.png' ? '3px solid var(--accent-primary)' : '3px solid transparent', opacity: avatar === '/avatar_girl.png' ? 1 : 0.5, transition: 'all 0.2s' }}
+              />
+            </div>
             
             <div style={{ marginTop: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
               <div 
@@ -88,8 +100,9 @@ const Onboarding: React.FC = () => {
                   style={{ 
                     padding: '16px', 
                     borderRadius: '12px', 
-                    border: interest === item ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                    backgroundColor: 'var(--bg-card)',
+                    border: interest === item ? '2px solid var(--accent-primary)' : '2px solid rgba(255,255,255,0.1)',
+                    backgroundColor: interest === item ? 'rgba(212, 133, 10, 0.1)' : 'rgba(255,255,255,0.05)',
+                    backdropFilter: 'blur(10px)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
