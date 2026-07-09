@@ -508,7 +508,7 @@ const Missions: React.FC = () => {
 
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', backgroundColor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>
               <div style={{ fontSize: '12px', fontWeight: 700, color: '#333' }}>
-                {language === 'ZH' ? '故事之地 • ' : 'LAND OF STORIES • '}
+                {language === 'ZH' ? '文化之桥 • ' : 'CULTURAL BRIDGES • '}
                 {aiMode ? (language === 'ZH' ? 'AI 版本' : 'AI EDITION') : (language === 'ZH' ? '真实版本' : 'AUTHENTIC EDITION')}
               </div>
               <div style={{ fontSize: '10px', color: '#666' }}>{language === 'ZH' ? '今天通过文化扫描仪捕获' : 'Captured today via Cultural Scanner'}</div>
@@ -524,10 +524,11 @@ const Missions: React.FC = () => {
             </button>
             <button 
               onClick={() => {
-                const text = language === 'ZH' ? '看看我在 Land of Stories 拍摄的照片！' : 'Look at this photo I captured on Land of Stories!';
-                const url = 'https://land-of-stories-demo.com';
+                const text = language === 'ZH' ? '看看我在 Cultural Bridges 拍摄的照片！' : 'Look at this photo I captured on Cultural Bridges!';
+                const url = 'https://cultural-bridges-demo.com';
+                
                 if (navigator.share) {
-                  navigator.share({ title: 'Land of Stories', text, url }).catch(() => {});
+                  navigator.share({ title: 'Cultural Bridges', text, url }).catch(() => {});
                 } else {
                   navigator.clipboard.writeText(`${text} ${url}`);
                   alert(language === 'ZH' ? '链接已复制到剪贴板！' : 'Link copied to clipboard!');

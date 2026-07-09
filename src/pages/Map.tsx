@@ -49,6 +49,8 @@ const Map: React.FC = () => {
   const [selectedCommId, setSelectedCommId] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [mapType, setMapType] = useState<'dark' | 'satellite'>('dark');
+  const [showSOSModal, setShowSOSModal] = useState(false);
+  const [sosData, setSosData] = useState<{lat: number, lng: number} | null>(null);
   const { communities, exploreCommunity, language } = useUser();
 
   const selectedComm = communities.find(c => c.id === selectedCommId) || null;
@@ -151,8 +153,24 @@ const Map: React.FC = () => {
           <div 
             onClick={() => {
               if (window.confirm(language === 'ZH' ? '🚨 发送 SOS 紧急警报？这会将您的精确 GPS 坐标发送给最近的社区向导。' : '🚨 Send SOS Emergency Alert? This will ping your exact GPS coordinates to the nearest community guide.')) {
-                alert(language === 'ZH' ? '✅ SOS 警报已发送！请留在原地，向导正在路上。' : '✅ SOS Alert Sent! Please remain at your location, a guide is on the way.');
-                if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 500]);
+                if (userLocation) {
+                  setSosData(userLocation);
+                  setShowSOSModal(true);
+                  if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 500]);
+                } else {
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setSosData({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                      setShowSOSModal(true);
+                      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 500]);
+                    },
+                    () => {
+                      setSosData(null);
+                      setShowSOSModal(true);
+                      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 500]);
+                    }
+                  );
+                }
               }
             }}
             style={{ backgroundColor: '#FF3B30', padding: '12px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(255,59,48,0.5)', cursor: 'pointer', border: '2px solid rgba(255,255,255,0.5)', width: '48px', height: '48px' }}
@@ -247,6 +265,43 @@ const Map: React.FC = () => {
         </div>
       </div>
       
+      {/* SOS Modal */}
+      {showSOSModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <div style={{ backgroundColor: '#1A1108', borderRadius: '24px', padding: '32px 24px', width: '100%', maxWidth: '350px', border: '2px solid #FF3B30', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxShadow: '0 0 40px rgba(255,59,48,0.3)' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '40px', backgroundColor: 'rgba(255,59,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: '#FF3B30', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'ping 1.5s infinite' }}>
+                <span style={{ color: '#FFF', fontWeight: 900, fontSize: '18px' }}>SOS</span>
+              </div>
+            </div>
+            
+            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#FF3B30', marginBottom: '12px' }}>
+              {language === 'ZH' ? '警报已发送' : 'ALERT DISPATCHED'}
+            </h2>
+            <p style={{ fontSize: '16px', color: '#FFF', marginBottom: '24px', lineHeight: 1.5 }}>
+              {language === 'ZH' 
+                ? '您的信号已传输至最近的文化保护站。请留在原地，向导正在路上。' 
+                : 'Your signal has been transmitted to the nearest cultural preservation post. Stay where you are, a guide is en route.'}
+            </p>
+
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', width: '100%', marginBottom: '32px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                {language === 'ZH' ? '传输坐标' : 'TRANSMITTED COORDINATES'}
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#07C160', letterSpacing: '1px' }}>
+                {sosData ? `${sosData.lat.toFixed(5)}, ${sosData.lng.toFixed(5)}` : 'UNKNOWN (IP TRACING)'}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowSOSModal(false)}
+              style={{ width: '100%', padding: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.1)', color: '#FFF', border: 'none', fontWeight: 600, fontSize: '16px', cursor: 'pointer' }}>
+              {language === 'ZH' ? '我知道了，关闭' : 'Acknowledged, Close'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes ping {
           75%, 100% {

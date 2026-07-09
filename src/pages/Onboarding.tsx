@@ -46,7 +46,7 @@ const Onboarding: React.FC = () => {
               </div>
             </div>
             <h1 style={{ fontSize: '36px', marginBottom: '12px', textAlign: 'center', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-              {language === 'ZH' ? '欢迎来到故事之地' : 'Land of Stories'}
+              {language === 'ZH' ? '欢迎来到文化之桥' : 'Cultural Bridges'}
             </h1>
             <p className="text-secondary" style={{ fontSize: '14px', textAlign: 'center', marginBottom: '40px' }}>
               {language === 'ZH' ? '您的文化桥梁之旅从这里开始。您叫什么名字？' : 'Your journey across cultural bridges starts here. What is your name?'}

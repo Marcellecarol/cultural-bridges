@@ -185,12 +185,12 @@ const Gacha: React.FC = () => {
             <div style={{ width: '80px', height: '80px', borderRadius: '40px', backgroundColor: '#07C160', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               onClick={() => {
                 const text = language === 'ZH' 
-                  ? `看看我在 Land of Stories 中解锁的 ${reward.rarity} 神器！` 
-                  : `Check out this ${reward.rarity} artifact I unlocked in Land of Stories!`;
+                  ? `看看我在 Cultural Bridges 中解锁的 ${reward.rarity} 神器！` 
+                  : `Check out this ${reward.rarity} artifact I unlocked in Cultural Bridges!`;
                 const url = 'https://land-of-stories-demo.com';
                 
                 if (navigator.share) {
-                  navigator.share({ title: 'Land of Stories', text, url }).catch(() => {});
+                  navigator.share({ title: 'Cultural Bridges', text, url }).catch(() => {});
                 } else {
                   navigator.clipboard.writeText(`${text} ${url}`);
                   alert(language === 'ZH' ? '链接已复制到剪贴板！' : 'Link copied to clipboard!');

@@ -20,6 +20,25 @@ const Mentor: React.FC = () => {
   const [journalTempImage, setJournalTempImage] = useState<string | undefined>(undefined);
   const [journalTempAudio, setJournalTempAudio] = useState<string | undefined>(undefined);
 
+  // Helper functions to dynamically translate hardcoded journal entries saved in localStorage
+  const translateJournalTitle = (title: string) => {
+    if (language !== 'ZH') return title;
+    if (title === 'Arrival at Kalunga') return '抵达卡伦加';
+    if (title.startsWith('Field Log: ')) return title.replace('Field Log: ', '实地日记：');
+    return title;
+  };
+
+  const translateJournalContent = (content: string) => {
+    if (language !== 'ZH') return content;
+    if (content === 'The road was long, but the community is vibrant. I learned about their connection to the Cerrado today.') 
+      return '路途遥远，但社区充满活力。今天我了解了他们与塞拉多生态的联系。';
+    if (content === 'Awaiting review from Community Leader.')
+      return '正在等待社区领袖的审核。';
+    if (content.includes('New cultural footprint added.'))
+      return content.replace('New cultural footprint added.', '添加了新的文化足迹。');
+    return content;
+  };
+
   const handleStartRoute = () => {
     completeRoute();
     navigate('/map');
@@ -36,9 +55,9 @@ const Mentor: React.FC = () => {
     Notification.requestPermission().then((permission) => {
       setPushStatus(permission);
       if (permission === 'granted') {
-        new Notification("Land of Stories", {
-          body: language === 'ZH' ? "一个新的卡伦加故事今天被揭示！" : "A new Kalunga story was revealed today!",
-          icon: "/favicon.ico"
+        new Notification("Cultural Bridges", {
+          body: language === 'ZH' ? "时间到了！文化遗迹正在变化..." : "Time shifted! Cultural landmarks are changing...",
+          icon: "/vite.svg"
         });
       }
     });
@@ -304,8 +323,8 @@ const Mentor: React.FC = () => {
               {entry.audio && (
                 <audio controls src={entry.audio} style={{ width: '100%', marginBottom: '16px', height: '36px' }} />
               )}
-              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>{entry.title}</h3>
-              <p className="text-secondary" style={{ fontSize: '14px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{entry.content}</p>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>{translateJournalTitle(entry.title)}</h3>
+              <p className="text-secondary" style={{ fontSize: '14px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{translateJournalContent(entry.content)}</p>
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '12px' }}>
                 {new Date(entry.date).toLocaleDateString()}
               </div>
@@ -384,12 +403,12 @@ const Mentor: React.FC = () => {
             <div style={{ width: '80px', height: '80px', borderRadius: '40px', backgroundColor: '#07C160', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               onClick={() => {
                 const text = language === 'ZH' 
-                  ? `看看我在 Land of Stories 中解锁的 ${shareItem.rarity} 神器！` 
-                  : `Check out this ${shareItem.rarity} artifact I unlocked in Land of Stories!`;
+                  ? `看看我在 Cultural Bridges 中解锁的 ${shareItem.rarity} 神器！` 
+                  : `Check out this ${shareItem.rarity} artifact I unlocked in Cultural Bridges!`;
                 const url = 'https://land-of-stories-demo.com';
                 
                 if (navigator.share) {
-                  navigator.share({ title: 'Land of Stories', text, url }).catch(() => {});
+                  navigator.share({ title: 'Cultural Bridges', text, url }).catch(() => {});
                 } else {
                   navigator.clipboard.writeText(`${text} ${url}`);
                   alert(language === 'ZH' ? '链接已复制到剪贴板！' : 'Link copied to clipboard!');
