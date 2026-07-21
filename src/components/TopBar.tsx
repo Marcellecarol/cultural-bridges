@@ -2,9 +2,10 @@ import React from 'react';
 import { Wifi, WifiOff, Globe, BrainCircuit, BarChart2, PackageOpen, Eye, Ticket, QrCode, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { Heart } from 'lucide-react';
 
 const TopBar: React.FC = () => {
-  const { isOffline, toggleOffline, language, setLanguage, aiMode, toggleAiMode, highContrast, toggleHighContrast } = useUser();
+  const { isOffline, toggleOffline, language, setLanguage, aiMode, toggleAiMode, highContrast, toggleHighContrast, inventory } = useUser();
   const navigate = useNavigate();
   const [showPassport, setShowPassport] = React.useState(false);
 
@@ -44,7 +45,7 @@ const TopBar: React.FC = () => {
           {isOffline ? (
             <>
               <WifiOff size={16} color="var(--text-secondary)" />
-              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>OFFLINE</span>
+              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{language === 'ZH' ? '离线 (同步中)' : 'SYNC PENDING'}</span>
             </>
           ) : (
             <>
@@ -70,11 +71,30 @@ const TopBar: React.FC = () => {
                 {language === 'ZH' ? '出示此二维码即可进入文化领地。' : 'Show this QR code for physical entry to the cultural territory.'}
               </p>
               
-              <div style={{ backgroundColor: '#FFF', padding: '16px', borderRadius: '16px', marginBottom: '32px' }}>
-                <QrCode size={180} color="#000" />
+              <div style={{ backgroundColor: '#FFF', padding: '16px', borderRadius: '16px', marginBottom: '24px' }}>
+                <QrCode size={140} color="#000" />
               </div>
               
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(255,255,255,0.2)', paddingTop: '20px' }}>
+              <div style={{ width: '100%', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  {language === 'ZH' ? '文化文物' : 'Cultural Artifacts'}
+                </h3>
+                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
+                  {inventory.map(artifact => (
+                    <div key={artifact.id} style={{ 
+                      width: '60px', height: '60px', borderRadius: '12px', 
+                      backgroundColor: artifact.unlocked ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.02)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      border: `1px solid ${artifact.unlocked ? (artifact.rarity === 'Epic' ? '#D4850A' : 'var(--accent-primary)') : 'rgba(255,255,255,0.05)'}`,
+                      opacity: artifact.unlocked ? 1 : 0.3
+                    }}>
+                      <PackageOpen size={24} color={artifact.unlocked ? (artifact.rarity === 'Epic' ? '#D4850A' : '#FFF') : '#FFF'} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(255,255,255,0.2)', paddingTop: '20px', marginBottom: '20px' }}>
                 <div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{language === 'ZH' ? '身份' : 'Status'}</div>
                   <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--accent-secondary)' }}>{language === 'ZH' ? '已验证' : 'Verified'}</div>
@@ -84,6 +104,16 @@ const TopBar: React.FC = () => {
                   <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>24h</div>
                 </div>
               </div>
+
+              <button 
+                onClick={() => {
+                  alert(language === 'ZH' ? '感谢您通过数字购买支持社区！' : 'Thank you for supporting the community through a digital purchase!');
+                  setShowPassport(false);
+                }}
+                style={{ width: '100%', backgroundColor: 'rgba(212, 133, 10, 0.1)', color: '#D4850A', border: '1px solid #D4850A', padding: '12px', borderRadius: '16px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <Heart size={16} fill="#D4850A" />
+                {language === 'ZH' ? '支持社区 (经济)' : 'Support Community (Economy)'}
+              </button>
             </div>
           </div>
         </div>
