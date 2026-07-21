@@ -40,6 +40,8 @@ const Missions: React.FC = () => {
 
   useEffect(() => {
     let stream: MediaStream | null = null;
+    let autoScanTimeout: any = null;
+    
     if (isCameraOpen || isQrOpen) {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then((s) => {
@@ -49,10 +51,20 @@ const Missions: React.FC = () => {
           }
         })
         .catch(err => console.error("Camera error:", err));
+        
+      if (isCameraOpen) {
+        // Simulate auto AR detection after 3 seconds
+        autoScanTimeout = setTimeout(() => {
+          takePhoto();
+        }, 3000);
+      }
     }
     return () => {
       if (stream) {
         stream.getTracks().forEach(t => t.stop());
+      }
+      if (autoScanTimeout) {
+        clearTimeout(autoScanTimeout);
       }
     };
   }, [isCameraOpen, isQrOpen]);
@@ -413,7 +425,19 @@ const Missions: React.FC = () => {
                 <div style={{ position: 'absolute', top: '30%', left: '40%', width: '6px', height: '6px', backgroundColor: 'var(--accent-secondary)', borderRadius: '3px', animation: 'ping 2s infinite' }}></div>
                 <div style={{ position: 'absolute', top: '60%', left: '70%', width: '6px', height: '6px', backgroundColor: 'var(--accent-secondary)', borderRadius: '3px', animation: 'ping 2.5s infinite 0.5s' }}></div>
                 <div style={{ position: 'absolute', top: '70%', left: '20%', width: '6px', height: '6px', backgroundColor: 'var(--accent-secondary)', borderRadius: '3px', animation: 'ping 1.5s infinite 1s' }}></div>
+                
+                {/* AR Scanning Laser */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', backgroundColor: 'var(--accent-primary)', boxShadow: '0 0 10px var(--accent-primary)', animation: 'scan 2s linear infinite' }}></div>
               </div>
+              
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes scan {
+                  0% { top: 0; opacity: 0; }
+                  10% { opacity: 1; }
+                  90% { opacity: 1; }
+                  100% { top: 100%; opacity: 0; }
+                }
+              `}} />
               <div style={{ marginTop: '32px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '8px 16px', borderRadius: '16px', color: '#FFF', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Loader2 size={12} style={{ animation: 'spin 2s linear infinite' }} />
                 {language === 'ZH' ? '正在识别文化特征...' : 'Identifying cultural features...'}

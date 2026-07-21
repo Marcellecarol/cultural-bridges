@@ -199,19 +199,45 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ backgroundColor: 'rgba(52, 199, 89, 0.1)', border: '1px solid rgba(52, 199, 89, 0.3)', padding: '16px', borderRadius: '20px' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Leaf size={14} color="#34C759" /> {language === 'ZH' ? '碳中和指数' : 'Carbon Offset'}
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#34C759' }}>+450 kg</div>
+          <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '24px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+              <Leaf size={20} color="#34C759" />
+              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{language === 'ZH' ? 'ESG 影响仪表板' : 'ESG Impact Dashboard'}</h3>
             </div>
             
-            <div style={{ backgroundColor: 'rgba(0, 122, 255, 0.1)', border: '1px solid rgba(0, 122, 255, 0.3)', padding: '16px', borderRadius: '20px' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <BarChart3 size={14} color="#007AFF" /> {language === 'ZH' ? '经济乘数' : 'Econ Multiplier'}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Carbon */}
+              <div style={{ backgroundColor: 'rgba(52, 199, 89, 0.1)', border: '1px solid rgba(52, 199, 89, 0.3)', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>{language === 'ZH' ? '碳信用额生成' : 'Carbon Credits Generated'}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#34C759' }}>14.5 {language === 'ZH' ? '吨' : 'Tons'}</div>
+                </div>
+                <div style={{ width: '40px', height: '40px', borderRadius: '20px', backgroundColor: '#34C759', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Leaf size={20} color="#FFF" />
+                </div>
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#007AFF' }}>2.4x</div>
+              
+              {/* Revenue */}
+              <div style={{ backgroundColor: 'rgba(212, 133, 10, 0.1)', border: '1px solid rgba(212, 133, 10, 0.3)', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>{language === 'ZH' ? '注入社区的收入' : 'Community Revenue Injected'}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#D4850A' }}>$4,250</div>
+                </div>
+                <div style={{ width: '40px', height: '40px', borderRadius: '20px', backgroundColor: '#D4850A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <DollarSign size={20} color="#FFF" />
+                </div>
+              </div>
+              
+              {/* Oral History */}
+              <div style={{ backgroundColor: 'rgba(94, 92, 230, 0.1)', border: '1px solid rgba(94, 92, 230, 0.3)', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>{language === 'ZH' ? '数字化的口述历史' : 'Oral Histories Digitized'}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#5E5CE6' }}>124 {language === 'ZH' ? '故事' : 'Stories'}</div>
+                </div>
+                <div style={{ width: '40px', height: '40px', borderRadius: '20px', backgroundColor: '#5E5CE6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Users size={20} color="#FFF" />
+                </div>
+              </div>
             </div>
           </div>
 
