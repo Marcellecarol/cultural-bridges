@@ -11,6 +11,8 @@ const Dashboard: React.FC = () => {
   const [isScanningLocation, setIsScanningLocation] = useState(false);
   const [localRoute, setLocalRoute] = useState<{name: string, type: string, dist: string}[] | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [mintingArtifact, setMintingArtifact] = useState<any>(null);
+  const [mintProgress, setMintProgress] = useState(0);
   const [pendingArtifacts, setPendingArtifacts] = useState([
     { id: 1, user: 'Tourist_Ana', img: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=400', desc: 'Is this the sacred waterfall?', status: 'pending' },
     { id: 2, user: 'JohnDoe', img: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=400', desc: 'Found this clay pot fragment', status: 'pending' }
@@ -138,7 +140,22 @@ const Dashboard: React.FC = () => {
                         <XCircle size={16} />
                       </button>
                       <button 
-                        onClick={() => setPendingArtifacts(prev => prev.map(p => p.id === artifact.id ? { ...p, status: 'approved' } : p))}
+                        onClick={() => {
+                          setMintingArtifact(artifact);
+                          setMintProgress(0);
+                          let prog = 0;
+                          const intv = setInterval(() => {
+                            prog += 20;
+                            setMintProgress(prog);
+                            if (prog >= 100) {
+                              clearInterval(intv);
+                              setTimeout(() => {
+                                setPendingArtifacts(prev => prev.map(p => p.id === artifact.id ? { ...p, status: 'approved' } : p));
+                                setMintingArtifact(null);
+                              }, 1000);
+                            }
+                          }, 500);
+                        }}
                         style={{ flex: 1, padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(52,199,89,0.1)', color: '#34C759', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', justifyContent: 'center', cursor: 'pointer' }}>
                         <CheckCircle2 size={16} />
                       </button>
@@ -448,6 +465,37 @@ const Dashboard: React.FC = () => {
           ))}
         </div>
       </div>
+      
+      {/* Web3 Minting Simulation Modal */}
+      {mintingArtifact && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 4000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ width: '100px', height: '100px', borderRadius: '50px', backgroundColor: 'rgba(94, 92, 230, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: '#5E5CE6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {mintProgress >= 100 ? <CheckCircle2 size={32} color="#FFF" /> : <Fingerprint size={32} color="#FFF" style={{ animation: 'pulse 1s infinite' }} />}
+            </div>
+          </div>
+          
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#FFF', marginBottom: '8px', textAlign: 'center' }}>
+            {mintProgress >= 100 
+              ? (language === 'ZH' ? 'NFT 铸造成功！' : 'NFT Minted Successfully!') 
+              : (language === 'ZH' ? '将资产铸造为 NFT...' : 'Minting Asset as NFT...')}
+          </h2>
+          
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px', maxWidth: '80%' }}>
+            {mintProgress >= 100 
+              ? (language === 'ZH' ? '该文化遗产现已被永久记录在区块链上。' : 'This cultural artifact is now permanently recorded on the blockchain.') 
+              : (language === 'ZH' ? '正在连接 Polygon 网络，生成智能合约...' : 'Connecting to Polygon network, generating smart contract...')}
+          </p>
+
+          <div style={{ width: '100%', maxWidth: '280px', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{ width: `${mintProgress}%`, height: '100%', backgroundColor: '#5E5CE6', transition: 'width 0.5s ease-out' }}></div>
+          </div>
+          
+          <div style={{ marginTop: '16px', fontSize: '12px', color: '#5E5CE6', fontFamily: 'monospace' }}>
+            {mintProgress > 20 && 'TxHash: 0x' + Math.random().toString(16).slice(2, 10) + '...'}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

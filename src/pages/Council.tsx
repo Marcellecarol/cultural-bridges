@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Send, User, MessageSquare, Globe, Database } from 'lucide-react';
+import { Users, Send, User, MessageSquare, Globe, Database, Volume2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 type Message = {
@@ -25,6 +25,13 @@ const Council: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     localStorage.setItem('council_messages', JSON.stringify(messages));
   }, [messages, isTyping]);
+
+  const speakText = (text: string) => {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === 'ZH' ? 'zh-CN' : 'en-US';
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -246,7 +253,14 @@ const Council: React.FC = () => {
               {m.sender === 'user' ? <User size={16} color="#FFF" /> : <img src={`/avatars/${m.sender}.png`} alt={m.sender} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: m.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
-              <span style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>{getAgentName(m.sender)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{getAgentName(m.sender)}</span>
+                {m.sender !== 'user' && (
+                  <button onClick={() => speakText(m.text)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                    <Volume2 size={12} color="var(--accent-secondary)" />
+                  </button>
+                )}
+              </div>
               <div style={{ 
                 backgroundColor: m.sender === 'user' ? 'var(--accent-primary)' : 'var(--bg-card)', 
                 color: m.sender === 'user' ? 'var(--bg-main)' : 'var(--text-primary)',
