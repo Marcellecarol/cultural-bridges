@@ -4,9 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 
 const Talk: React.FC = () => {
-  const [messages, setMessages] = useState<any[]>([
-    { id: 1, role: 'assistant', content: 'Hello, Explorer! I am Ana Terena, your cultural mentor. How can I assist you with your fieldwork today?', hasAudio: true }
-  ]);
+  const [messages, setMessages] = useState<any[]>(() => {
+    const saved = localStorage.getItem('talk_messages');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 1, role: 'assistant', content: 'Hello, Explorer! I am Ana Terena, your cultural mentor. How can I assist you with your fieldwork today?', hasAudio: true }
+    ];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [ragStep, setRagStep] = useState(0); // 0: None, 1: Search, 2: Context, 3: Generating
@@ -49,6 +53,7 @@ const Talk: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
+    localStorage.setItem('talk_messages', JSON.stringify(messages));
   }, [messages, isLoading, ragStep, isTyping]);
 
   const handleSend = async () => {

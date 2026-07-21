@@ -10,15 +10,20 @@ type Message = {
 
 const Council: React.FC = () => {
   const { language, aiMode } = useUser();
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', sender: 'elder', text: language === 'ZH' ? '欢迎来到村庄议事厅。关于我们的传统，你想了解什么？' : 'Welcome to the Village Council. What would you like to know about our traditions?' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem('council_messages');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: '1', sender: 'elder', text: language === 'ZH' ? '欢迎来到村庄议事厅。关于我们的传统，你想了解什么？' : 'Welcome to the Village Council. What would you like to know about our traditions?' }
+    ];
+  });
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState<'elder' | 'youth' | 'historian' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    localStorage.setItem('council_messages', JSON.stringify(messages));
   }, [messages, isTyping]);
 
   const handleSend = () => {
