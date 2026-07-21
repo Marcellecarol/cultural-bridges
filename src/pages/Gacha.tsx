@@ -166,23 +166,23 @@ const Gacha: React.FC = () => {
 
               <button 
                 onClick={() => setShowShare(true)}
-                style={{ backgroundColor: '#07C160', color: '#FFF', border: 'none', padding: '16px 32px', borderRadius: '24px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 24px rgba(7, 193, 96, 0.4)' }}>
-                <Share2 size={18} /> {language === 'ZH' ? '分享至微信 (+50 XP)' : 'Share to WeChat (+50 XP)'}
+                style={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', color: '#FFF', border: 'none', padding: '16px 32px', borderRadius: '24px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 24px rgba(220, 39, 67, 0.4)' }}>
+                <Share2 size={18} /> {language === 'ZH' ? '分享至小红书/微信' : 'Share to Instagram'}
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* WeChat Share Modal */}
+      {/* Social Share Modal */}
       {showShare && reward && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: 'var(--bg-main)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '300px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>{language === 'ZH' ? '分享至微信' : 'Share to WeChat'}</h3>
+            <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>{language === 'ZH' ? '分享' : 'Share to Socials'}</h3>
             <p className="text-secondary" style={{ fontSize: '14px', marginBottom: '24px' }}>
               {language === 'ZH' ? `炫耀你的 ${reward.rarity} 神器并获得 XP！` : `Show off your ${reward.rarity} artifact and gain XP!`}
             </p>
-            <div style={{ width: '80px', height: '80px', borderRadius: '40px', backgroundColor: '#07C160', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            <div style={{ width: '80px', height: '80px', borderRadius: '40px', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 30px rgba(220, 39, 67, 0.4)' }}
               onClick={() => {
                 const text = language === 'ZH' 
                   ? `看看我在 Cultural Bridges 中解锁的 ${reward.rarity} 神器！` 
@@ -202,7 +202,7 @@ const Gacha: React.FC = () => {
               }}>
               <Share2 size={32} color="#FFF" />
             </div>
-            <div style={{ color: '#07C160', fontWeight: 600, marginBottom: '16px' }}>+50 XP Bonus!</div>
+            <div style={{ color: '#E1306C', fontWeight: 600, marginBottom: '16px' }}>+50 XP Bonus!</div>
             <button onClick={() => setShowShare(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
               {language === 'ZH' ? '取消' : 'Cancel'}
             </button>

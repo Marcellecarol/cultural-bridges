@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { ChevronLeft, Users, DollarSign, BrainCircuit, Activity, ShieldCheck, ArrowUpRight, Building2, Leaf, BarChart3, MapPin, Navigation, Store, Map, Smartphone, Fingerprint, CheckCircle2, XCircle, Camera } from 'lucide-react';
+import { ChevronLeft, Users, DollarSign, BrainCircuit, Activity, ShieldCheck, ArrowUpRight, Building2, Leaf, BarChart3, MapPin, Navigation, Store, Map, Smartphone, Fingerprint, CheckCircle2, XCircle, Camera, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
@@ -13,6 +13,7 @@ const Dashboard: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [mintingArtifact, setMintingArtifact] = useState<any>(null);
   const [mintProgress, setMintProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
   const [pendingArtifacts, setPendingArtifacts] = useState([
     { id: 1, user: 'Tourist_Ana', img: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=400', desc: 'Is this the sacred waterfall?', status: 'pending' },
     { id: 2, user: 'JohnDoe', img: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=400', desc: 'Found this clay pot fragment', status: 'pending' }
@@ -207,13 +208,29 @@ const Dashboard: React.FC = () => {
       ) : (
         <>
           {/* Smart City B2G Dashboard */}
-          <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '24px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', backgroundColor: '#007AFF', opacity: 0.1, borderRadius: '50%', filter: 'blur(30px)' }}></div>
-            <h2 style={{ fontSize: '18px', marginBottom: '8px' }}>Smart City Tourism</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '14px', fontWeight: 600 }}>
-              <Building2 size={16} />
-              {language === 'ZH' ? '市政监控面板' : 'Municipal Dashboard'}
+          <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '24px', marginBottom: '24px', position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', backgroundColor: '#007AFF', opacity: 0.1, borderRadius: '50%', filter: 'blur(30px)', zIndex: 0 }}></div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h2 style={{ fontSize: '18px', marginBottom: '8px' }}>Smart City Tourism</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '14px', fontWeight: 600 }}>
+                <Building2 size={16} />
+                {language === 'ZH' ? '市政监控面板' : 'Municipal Dashboard'}
+              </div>
             </div>
+            <button 
+              onClick={() => {
+                setIsExporting(true);
+                setTimeout(() => {
+                  setIsExporting(false);
+                  alert(language === 'ZH' ? 'ESG和旅游报告导出成功！' : 'ESG and Tourism Report exported successfully!');
+                }, 2000);
+              }}
+              disabled={isExporting}
+              style={{ position: 'relative', zIndex: 1, backgroundColor: 'rgba(0, 122, 255, 0.1)', color: '#007AFF', border: '1px solid rgba(0, 122, 255, 0.3)', padding: '8px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+            >
+              {isExporting ? <Activity size={14} style={{ animation: 'spin 2s linear infinite' }} /> : <Download size={14} />}
+              {isExporting ? (language === 'ZH' ? '正在导出...' : 'EXPORTING...') : (language === 'ZH' ? '导出报告' : 'EXPORT REPORT')}
+            </button>
           </div>
 
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '24px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
