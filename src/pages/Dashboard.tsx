@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { ChevronLeft, Users, DollarSign, BrainCircuit, Activity, ShieldCheck, ArrowUpRight, Building2, Leaf, BarChart3, MapPin, Navigation, Store, Map, Smartphone, Fingerprint, CheckCircle2, XCircle, Camera, Download } from 'lucide-react';
+import { ChevronLeft, Users, DollarSign, BrainCircuit, Activity, ShieldCheck, ArrowUpRight, Building2, Leaf, MapPin, Navigation, Store, Map, Smartphone, Fingerprint, CheckCircle2, XCircle, Camera, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
