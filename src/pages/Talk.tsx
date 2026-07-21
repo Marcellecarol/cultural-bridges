@@ -173,6 +173,7 @@ const Talk: React.FC = () => {
           setIsRecording(false);
           
           if (translatorMode) {
+            setMessages(prev => [...prev, { id: Date.now(), role: 'user', content: transcript }]);
             setIsTyping(true);
             try {
               const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
@@ -189,6 +190,7 @@ const Talk: React.FC = () => {
               const data = await res.json();
               const translated = data.choices?.[0]?.message?.content;
               if (translated) {
+                setMessages(prev => [...prev, { id: Date.now(), role: 'assistant', content: translated, hasAudio: true }]);
                 playAudio(translated);
               } else {
                 throw new Error("Empty translation");
@@ -209,10 +211,17 @@ const Talk: React.FC = () => {
                 fallback = language === 'ZH' ? "是的，这里的自然风光非常迷人。" : "Yes, the nature here is absolutely stunning.";
               }
 
+              setMessages(prev => [...prev, { id: Date.now(), role: 'assistant', content: fallback, hasAudio: true }]);
               playAudio(fallback);
             } finally {
               setIsTyping(false);
             }
+          } else {
+            // Not in translator mode but triggered voice recording
+            // We should simulate clicking "Send"
+            setInput(transcript);
+            // We can't directly call handleSend here cleanly without changing its dependencies, 
+            // but the user can just press the send button after the text is populated.
           }
         };
 
