@@ -35,11 +35,47 @@ const Council: React.FC = () => {
   const triggerAgentResponse = async (userText: string) => {
     setIsTyping('historian');
     const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+    const msgLower = userText.toLowerCase();
+    
+    // Smart Fallback Generation Logic
+    const getFallbacks = () => {
+      if (msgLower.includes('food') || msgLower.includes('comida') || msgLower.includes('comer')) {
+        return {
+          h: language === 'ZH' ? '据记载，我们的主食木薯自17世纪以来就滋养着这片土地上的逃亡奴隶。' : 'Records show cassava has nourished the inhabitants of this land since the 17th century.',
+          e: language === 'ZH' ? '不要忘记感谢土壤。我们种什么，土地就还给我们什么。' : 'Never forget to thank the soil. What we plant, the earth returns to us.',
+          y: language === 'ZH' ? '我们在网上卖我们的面粉！它是完全有机的，全世界的人都喜欢它。' : 'We actually sell our flour online now! It is totally organic and people everywhere love it.'
+        };
+      } else if (msgLower.includes('history') || msgLower.includes('história') || msgLower.includes('historia')) {
+        return {
+          h: language === 'ZH' ? '卡伦加是巴西最大的残存逃亡奴隶社区，横跨三个城市。' : 'The Kalunga is the largest remnant quilombola community in Brazil, spanning across three municipalities.',
+          e: language === 'ZH' ? '我们祖先的鲜血和汗水浸透了这些山脉，我们永远不会离开它们。' : 'Our ancestors blood and sweat soaked these mountains, and we shall never leave them.',
+          y: language === 'ZH' ? '我们正在使用无人机来绘制我们的历史领土，以保护它免受森林砍伐！' : 'We are using drones to map our historical territory and protect it from deforestation!'
+        };
+      } else {
+        return {
+          h: language === 'ZH' ? '跨越数百年的口述传统证明了我们的韧性。' : 'Oral traditions spanning hundreds of years prove our resilience.',
+          e: language === 'ZH' ? '大自然总能找到出路。就像水在岩石中穿行一样，我们的人民也是如此。' : 'Nature always finds a way. Just as water carves through rocks, so do our people.',
+          y: language === 'ZH' ? '太棒了！只要我们记住根，世界就是我们的。' : 'That is awesome! The world is ours to explore as long as we remember our roots.'
+        };
+      }
+    };
+
+    const fallbacks = getFallbacks();
+
     if (!apiKey) {
+      // Simulate orchestration offline
       setTimeout(() => {
-        setMessages(prev => [...prev, { id: Date.now().toString() + 'err', sender: 'elder', text: 'API Key missing.' }]);
-        setIsTyping(null);
-      }, 1000);
+        setMessages(prev => [...prev, { id: Date.now().toString() + 'h', sender: 'historian', text: fallbacks.h }]);
+        setIsTyping('elder');
+        setTimeout(() => {
+          setMessages(prev => [...prev, { id: Date.now().toString() + 'e', sender: 'elder', text: fallbacks.e }]);
+          setIsTyping('youth');
+          setTimeout(() => {
+            setMessages(prev => [...prev, { id: Date.now().toString() + 'y', sender: 'youth', text: fallbacks.y }]);
+            setIsTyping(null);
+          }, 1500);
+        }, 1500);
+      }, 1500);
       return;
     }
 
@@ -68,29 +104,39 @@ const Council: React.FC = () => {
       // 1. Historian
       setIsTyping('historian');
       let histText = await callAgent('historian', histPrompt);
-      if (!histText) histText = language === 'ZH' ? '据记载，我们的仪式起源于18世纪的口述历史中。' : 'Records show our ceremonies originated in the 18th century oral histories.';
+      if (!histText) histText = fallbacks.h;
       setMessages(prev => [...prev, { id: Date.now().toString() + 'h', sender: 'historian', text: histText }]);
 
       // 2. Elder
       setIsTyping('elder');
       let elderText = await callAgent('elder', elderPrompt);
-      if (!elderText) elderText = language === 'ZH' ? '确实如此，我们必须以敬畏之心保护这片赋予我们生命的土地。' : 'Indeed, we must protect the land that gives us life with great reverence.';
+      if (!elderText) elderText = fallbacks.e;
       setMessages(prev => [...prev, { id: Date.now().toString() + 'e', sender: 'elder', text: elderText }]);
 
       // 3. Youth
       setIsTyping('youth');
       let youthText = await callAgent('youth', youthPrompt);
-      if (!youthText) youthText = language === 'ZH' ? '现在我们会用手机记录这些时刻，让全世界看到我们的文化！' : 'Nowadays we record these moments with our phones so the whole world can see our culture!';
+      if (!youthText) youthText = fallbacks.y;
       setMessages(prev => [...prev, { id: Date.now().toString() + 'y', sender: 'youth', text: youthText }]);
 
     } catch (e) {
-      setMessages(prev => [...prev, { 
-        id: Date.now().toString() + 'err', 
-        sender: 'elder', 
-        text: language === 'ZH' ? '风声太吵，我们稍后再议。' : 'The wind is too loud today, let us speak later.' 
-      }]);
+      // If network fails, append the offline responses instead of stopping
+      setMessages(prev => [...prev, { id: Date.now().toString() + 'h', sender: 'historian', text: fallbacks.h }]);
+      setIsTyping('elder');
+      setTimeout(() => {
+        setMessages(prev => [...prev, { id: Date.now().toString() + 'e', sender: 'elder', text: fallbacks.e }]);
+        setIsTyping('youth');
+        setTimeout(() => {
+          setMessages(prev => [...prev, { id: Date.now().toString() + 'y', sender: 'youth', text: fallbacks.y }]);
+          setIsTyping(null);
+        }, 1000);
+      }, 1000);
+      return; // return to avoid setting isTyping to null below immediately
     } finally {
-      setIsTyping(null);
+      // Only set to null if we didn't enter the catch block with timeouts
+      if (apiKey) {
+        setIsTyping(null);
+      }
     }
   };
 
