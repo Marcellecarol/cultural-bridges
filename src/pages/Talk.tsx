@@ -90,8 +90,24 @@ const Talk: React.FC = () => {
       });
       const data = await res.json();
       
-      const fallbackZh = "欢迎！在我们的Kalunga文化中，土地是我们神圣的家园。我们致力于在尊重自然的同时连接世界。";
-      const fallbackEn = "Welcome! In our Kalunga culture, the land is our sacred home. We strive to connect the world while respecting nature.";
+      const msgLower = userMsg.toLowerCase();
+      let fallbackZh = "欢迎！在我们的Kalunga文化中，土地是我们神圣的家园。我们致力于在尊重自然的同时连接世界。";
+      let fallbackEn = "Welcome! In our Kalunga culture, the land is our sacred home. We strive to connect the world while respecting nature.";
+      
+      if (msgLower.includes('food') || msgLower.includes('comida')) {
+        fallbackZh = "啊，我们的传统食物非常棒。你尝过我们自制的木薯粉吗？这是我们几代人的主食。";
+        fallbackEn = "Ah, our traditional food is amazing. Have you tried our homemade cassava flour? It's been our staple for generations.";
+      } else if (msgLower.includes('history') || msgLower.includes('história') || msgLower.includes('historia')) {
+        fallbackZh = "我们在塞拉多的历史很深远。我们的祖先几个世纪前就在这里建立了这个避难所，将自然与自由交织在一起。";
+        fallbackEn = "Our history in the Cerrado runs deep. Our ancestors established this sanctuary centuries ago, intertwining nature and freedom.";
+      } else if (msgLower.includes('nature') || msgLower.includes('natureza') || msgLower.includes('cerrado')) {
+        fallbackZh = "塞拉多是我们的母亲。这里的每一种植物都有其用途，无论是用于治疗还是维持生命。";
+        fallbackEn = "The Cerrado is our mother. Every plant here has a purpose, whether for healing or sustaining life.";
+      } else if (msgLower.includes('hello') || msgLower.includes('olá') || msgLower.includes('oi')) {
+        fallbackZh = "你好朋友，欢迎来到我们的村庄。我们有什么可以帮你的？";
+        fallbackEn = "Hello friend, welcome to our village. How can we help you today?";
+      }
+
       const reply = data.choices?.[0]?.message?.content || (language === 'ZH' ? fallbackZh : fallbackEn);
       
       setMessages(prev => [...prev, { 
@@ -108,12 +124,31 @@ const Talk: React.FC = () => {
       
     } catch (err) {
       console.error(err);
-      const errFallbackZh = "你好！由于网络波动，我暂时用传统的方式向你问好：愿自然的智慧指引你的旅程！";
-      const errFallbackEn = "Hello! Due to the winds of connectivity, I greet you traditionally: May nature's wisdom guide your journey!";
+      
+      // Smart Fallback for Mentor Chat Error
+      const msgLower = userMsg.toLowerCase();
+      let errFallbackZh = "你好！由于网络波动，我暂时用传统的方式向你问好：愿自然的智慧指引你的旅程！";
+      let errFallbackEn = "Hello! Due to the winds of connectivity, I greet you traditionally: May nature's wisdom guide your journey!";
+      
+      if (msgLower.includes('food') || msgLower.includes('comida')) {
+        errFallbackZh = "谈到食物，我们的木薯粉和当地种植的豆类是您必须尝试的！";
+        errFallbackEn = "Speaking of food, our cassava flour and locally grown beans are a must-try!";
+      } else if (msgLower.includes('history') || msgLower.includes('história') || msgLower.includes('historia')) {
+        errFallbackZh = "我们的长者掌握着我们历史的钥匙。每一个故事都是为了保持我们的文化活力而传承下来的。";
+        errFallbackEn = "Our elders hold the keys to our history. Every story is passed down to keep our culture alive.";
+      } else if (msgLower.includes('nature') || msgLower.includes('natureza') || msgLower.includes('cerrado')) {
+        errFallbackZh = "自然是我们最大的老师。看看周围的塞拉多，它是如此顽强和美丽。";
+        errFallbackEn = "Nature is our greatest teacher. Look around the Cerrado, it's so resilient and beautiful.";
+      } else {
+        errFallbackZh = "这是一个有趣的想法！卡伦加文化充满了等待探索的奥秘。";
+        errFallbackEn = "That is an interesting thought! The Kalunga culture is full of mysteries waiting to be explored.";
+      }
+
       setMessages(prev => [...prev, { 
         id: Date.now(), 
         role: 'assistant', 
-        content: language === 'ZH' ? errFallbackZh : errFallbackEn 
+        content: language === 'ZH' ? errFallbackZh : errFallbackEn,
+        hasAudio: true
       }]);
       setIsLoading(false);
       setRagStep(0);
@@ -160,7 +195,20 @@ const Talk: React.FC = () => {
               }
             } catch (e) {
               console.error(e);
-              const fallback = language === 'ZH' ? "你好朋友，欢迎来到我们的村庄。" : "Hello friend, welcome to our village.";
+              // Smart Fallback for Translator Mode Error
+              const transLower = transcript.toLowerCase();
+              let fallback = language === 'ZH' ? "你好朋友，欢迎来到我们的村庄。" : "Hello friend, welcome to our village.";
+              
+              if (transLower.includes('thank') || transLower.includes('obrigad')) {
+                fallback = language === 'ZH' ? "不客气，谢谢你的访问！" : "You are welcome, thank you for visiting!";
+              } else if (transLower.includes('where') || transLower.includes('onde')) {
+                fallback = language === 'ZH' ? "就在前方不远处。" : "It's just a little bit further ahead.";
+              } else if (transLower.includes('name') || transLower.includes('nome')) {
+                fallback = language === 'ZH' ? "我是来自Kalunga社区的向导。" : "I am a guide from the Kalunga community.";
+              } else if (transLower.includes('beautiful') || transLower.includes('lindo') || transLower.includes('bonito')) {
+                fallback = language === 'ZH' ? "是的，这里的自然风光非常迷人。" : "Yes, the nature here is absolutely stunning.";
+              }
+
               playAudio(fallback);
             } finally {
               setIsTyping(false);
